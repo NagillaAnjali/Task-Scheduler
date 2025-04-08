@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login/Signup</title>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <!-- Custom CSS -->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f1f1f1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .auth-container {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 300px;
+        }
+        .auth-container h3 {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .btn-auth {
+            width: 100%;
+        }
+        .auth-toggle {
+            text-align: center;
+            margin-top: 10px;
+        }
+        .auth-toggle a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        .auth-toggle a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+<div class="auth-container" id="auth-container">
+    <h3 id="form-heading">Login</h3>
+    <form id="auth-form">
+        <div class="form-group">
+            <label for="username">Username:</label>
+            <input type="text" id="username" class="form-control" placeholder="Enter your username" required>
+        </div>
+        <div class="form-group">
+            <label for="password">Password:</label>
+            <input type="password" id="password" class="form-control" placeholder="Enter your password" required>
+        </div>
+        <button type="submit" class="btn btn-primary btn-auth" id="auth-button">Login</button>
+    </form>
+    <div class="auth-toggle" id="auth-toggle">
+        <p id="toggle-text">Don't have an account? <a href="#" id="toggle-link">Sign up</a></p>
+    </div>
+</div>
+
+<!-- Bootstrap JS and jQuery -->
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+<script>
+    // Get elements
+    const authForm = document.getElementById('auth-form');
+    const authButton = document.getElementById('auth-button');
+    const authContainer = document.getElementById('auth-container');
+    const formHeading = document.getElementById('form-heading');
+    const toggleText = document.getElementById('toggle-text');
+    const toggleLink = document.getElementById('toggle-link');
+
+    // Switch between Sign Up and Login
+    let isSignUp = false;
+
+    toggleLink.addEventListener('click', function() {
+        isSignUp = !isSignUp;
+        toggleForm();
+    });
+
+    // Toggle between login and signup forms
+    function toggleForm() {
+        if (isSignUp) {
+            formHeading.textContent = 'Sign Up';
+            authButton.textContent = 'Sign Up';
+            toggleText.innerHTML = `Already have an account? <a href="#" id="toggle-link">Login</a>`;
+            document.getElementById('toggle-link').addEventListener('click', function() {
+                isSignUp = !isSignUp;
+                toggleForm();
+            });
+        } else {
+            formHeading.textContent = 'Login';
+            authButton.textContent = 'Login';
+            toggleText.innerHTML = `Don't have an account? <a href="#" id="toggle-link">Sign up</a>`;
+            document.getElementById('toggle-link').addEventListener('click', function() {
+                isSignUp = !isSignUp;
+                toggleForm();
+            });
+        }
+    }
+
+    // Form submission handler
+    authForm.addEventListener('submit', function(event) {
+        event.preventDefault(); // Prevent form submission
+
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+
+        if (isSignUp) {
+            handleSignUp(username, password);
+        } else {
+            handleLogin(username, password);
+        }
+    });
+
+    // Handle Sign Up
+    function handleSignUp(username, password) {
+        const existingUser = localStorage.getItem(username);
+        if (existingUser) {
+            alert('Username already exists! Please log in.');
+        } else {
+            localStorage.setItem(username, password);
+            alert('Sign up successful! You can now log in.');
+            isSignUp = false; // Switch to login form after successful sign up
+            toggleForm();
+        }
+    }
+
+    // Handle Login
+    function handleLogin(username, password) {
+        const storedPassword = localStorage.getItem(username);
+        if (storedPassword && storedPassword === password) {
+            // Redirect to the task scheduler page (Replace with your actual task scheduler page URL)
+            localStorage.setItem('username', username);
+            window.location.href = 'task_scheduler.html';
+        } else {
+            alert('Invalid username or password!');
+        }
+    }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Interactive Dashboard with Task Scheduler</title>
+<!-- Bootstrap CSS -->
+<link rel="stylesheet"
+href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+<!-- Google Fonts -->
+<link
+href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap"
+rel="stylesheet">
+<!-- CSS for layout, calendar, task management, and pie chart -->
+<style>
+body {
+font-family: 'Roboto', sans-serif;
+background-color: #CFD8DC;
+color: #333;
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+padding: 20px;
+margin: 0;
+box-sizing: border-box;
+}
+.navbar {
+background-color: #2c3e50;
+color: #fff;
+padding: 15px;
+width: 100%;
+max-width: 1200px;
+border-radius: 8px;
+display: flex;
+justify-content: space-between;
+margin-bottom: 20px;
+}
+.navbar img {
+width: 30px;
+height: 30px;
+margin-right: 10px;
+}
+.profile {
+display: flex;
+align-items: center;
+}
+.profile-name {
+margin-right: 10px;
+}
+.container {
+display: flex;
+flex-wrap: wrap;
+justify-content: space-between;
+/* width: 100%; */
+max-width: 1200px;
+gap: 20px;
+margin-bottom: 20px;
+overflow-y: auto;
+}
+.calendar-container,
+.task-scheduler-container,
+.task-tracker-container {
+    flex: 1;
+    min-width: 300px;
+    background-color: #fff;
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow : 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+h3 {
+font-weight: 500;
+margin-bottom: 15px;
+}
+table {
+width: 100%;
+border-collapse: collapse;
+table-layout: fixed;
+}
+th,
+td {
+border: 1px solid #ddd;
+padding: 10px;
+text-align: center;
+}
+th {
+background-color: #34495e;
+color: #fff;
+}
+.highlight-today {
+background-color: #06d4ef;
+}
+.task-item {
+font-weight: 500;
+cursor: pointer;
+padding: 10px;
+border-radius: 5px;
+transition: background 0.3s;
+}
+.task-item:hover {
+background-color: #f1f1f1;
+}
+.completed-task {
+text-decoration: line-through;
+color: grey;
+cursor: default;
+}
+.priority-high {
+color: red;
+}
+.priority-medium {
+color: orange;
+}
+.priority-low {
+    color: green;
+}
+.notification {
+background-color: #e07eb3;
+padding: 10px;
+border: 1px solid #ccc;
+margin-bottom: 15px;
+border-radius: 5px;
+text-align: center;
+display: none;
+}
+.task-scheduler input,
+.task-scheduler select,
+.task-scheduler button {
+margin-bottom: 10px;
+width: 100%;
+padding: 10px;
+border-radius: 5px;
+border: 1px solid #ccc;
+font-size: 1rem;
+}
+#task-list h4 {
+margin-top: 20px;
+}
+@keyframes fadeIn {
+from {
+opacity: 0;
+}
+to {
+opacity: 1;
+}
+}
+.reminder-popup {
+position: fixed;
+top: 20px;
+left: 50%;
+transform: translateX(-50%);
+background-color: #f44336;
+color: white;
+padding: 15px;
+border-radius: 5px;
+box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+display: none;
+animation: fadeIn 0.5s;
+}
+.task-datetime {
+margin-left: 3px; /* Adjust the margin to create space between task name and date/time */
+}
+</style>
+</head>
+<body>
+<header>
+<!-- Navigation bar -->
+<nav class="navbar navbar-dark">
+<a class="navbar-brand" href="#">Dashboard</a>
+<div class="profile">
+<span class="profile-name" id="profile-name"></span>
+<img src="https://cdn-icons-png.flaticon.com/512/6915/6915987.png" alt="Profile">
+</div>
+</nav>
+</header>
+<div class="container">
+<div class="calendar-container">
+<h3>Calendar</h3>
+<!-- Buttons for next and previous month -->
+<div>
+<button id="prev-month">Previous Month</button>
+<button id="next-month">Next Month</button>
+<button id="present-month">Present Month</button>
+</div>
+<table class="table table-bordered">
+<thead>
+<tr>
+<th scope="col">Sun</th>
+<th scope="col">Mon</th>
+<th scope="col">Tue</th>
+<th scope="col">Wed</th>
+<th scope="col">Thu</th>
+<th scope="col">Fri</th>
+<th scope="col">Sat</th>
+</tr>
+</thead>
+<tbody id="calendar-body">
+<!-- Calendar body will be generated here -->
+</tbody>
+</table>
+</div>
+<div class="task-tracker-container">
+<h3>Task Tracker</h3>
+<div class="notification" id="notification">
+    You have tasks to complete today!
+</div>
+<div class="pie-chart-container">
+<canvas id="pie-chart" width="200" height="200"></canvas>
+<div id="completion-percentage"></div>
+<div id="overall-completion"></div>
+</div>
+</div>
+<div class="task-scheduler-container">
+<div class="task-scheduler">
+<h3>Task Scheduler</h3>
+<input type="text" id="task-input" placeholder="Enter Task">
+<input type="datetime-local" id="task-time">
+<select id="task-priority">
+<option value="low">Low Priority</option>
+<option value="medium">Medium Priority</option>
+<option value
+="high">High Priority</option>
+</select>
+<button onclick="addTask()">Add Task</button>
+<div id="task-list"></div>
+</div>
+</div>
+</div>
+<div class="reminder-popup" id="reminder-popup">
+<p id="reminder-message"></p>
+<button id="reschedule-btn">Reschedule</button>
+<button id="incomplete-btn">Mark as Incomplete</button>
+</div>
+<!-- Bootstrap JS -->
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script
+src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<!-- JavaScript for calendar, task management, and pie chart -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+generateCalendar();
+highlightToday();
+displayTasks();
+generatePieChart(); // Initial load for today's tasks
+checkNotifications();
+setInterval(checkReminders, 60000); // Check every minute
+// Event listeners for next and previous month buttons
+document.getElementById('prev-month').addEventListener('click', function () {
+changeMonth(-1);
+});
+document.getElementById('next-month').addEventListener('click', function () {
+changeMonth(1);
+});
+document.getElementById('present-month').addEventListener('click', function () {
+changeMonth(0);
+});
+// Add event listener for calendar date selection
+document.getElementById('calendar-body').addEventListener('click', function (event) {
+if (event.target.tagName === 'TD' && event.target.textContent.trim() !== '') {
+var selectedDate = new Date();
+selectedDate.setDate(parseInt(event.target.textContent));
+selectedDate.setMonth(new Date().getMonth());
+selectedDate.setFullYear(new Date().getFullYear());
+generatePieChart(selectedDate.toISOString().split('T')[0]);
+}
+});
+});
+function generateCalendar(year = new Date().getFullYear(), month = new Date().getMonth()) {
+var calendarBody = document.getElementById('calendar-body');
+calendarBody.innerHTML = '';
+var daysInMonth = new Date(year, month + 1, 0).getDate();
+var today = new Date().getDate();
+var dayIndex = new Date(year, month, 1).getDay();
+var dayCount = 1;
+// Display month name above the calendar
+var monthHeader = document.createElement('tr');
+var monthHeaderCell = document.createElement('td');
+monthHeaderCell.setAttribute('colspan', '7');
+monthHeaderCell.textContent = new Date(year, month).toLocaleString('default', { month: 'long' })
++ ' ' + year;
+monthHeader.appendChild(monthHeaderCell);
+calendarBody.appendChild(monthHeader);
+var row;
+for (var i = 0; i < 6; i++) {
+row = document.createElement('tr');
+for (var j = 0; j < 7; j++) {
+var cell = document.createElement('td');
+if (i === 0 && j < dayIndex) {
+cell.textContent = '';
+} else if (dayCount <= daysInMonth) {
+cell.textContent = dayCount;
+if (dayCount === today && year === new Date().getFullYear() && month === new
+Date().getMonth()) {
+cell.classList.add('highlight-today');
+cell.setAttribute('data-date', '${year}-${month + 1}-${dayCount}');
+}
+dayCount++;
+} else {
+cell.textContent = '';
+}
+row.appendChild(cell);
+}
+calendarBody.appendChild(row);
+}
+}
+function changeMonth(monthOffset) {
+var currentDate = new Date();
+var currentYear = currentDate.getFullYear();
+var currentMonth = currentDate.getMonth();
+var newMonth = currentMonth + monthOffset;
+var newYear = currentYear;
+// Handle overflow/underflow of month and year
+if (newMonth < 0) {
+newMonth = 11; // December of previous year
+newYear--;
+} else if (newMonth > 11) {
+newMonth = 0; // January of next year
+newYear++;
+}
+generateCalendar(newYear, newMonth);
+}
+function highlightToday() {
+var today = new Date().toISOString().split('T')[0];
+var todayElement = document.querySelector(`[data-date="${today}"]`);
+if (todayElement) {
+todayElement.classList.add('highlight-today');
+}
+}
+// Function to calculate the overall completion percentage
+function calculateOverallCompletion() {
+var tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+var completedTasks = tasks.filter(task => task.completed).length;
+var totalTasks = tasks.length;
+if (totalTasks === 0) return 0; // To avoid division by zero
+return Math.round((completedTasks / totalTasks) * 100);
+}
+function generatePieChart(selectedDate = new Date().toISOString().split('T')[0]) {
+var ctx = document.getElementById('pie-chart').getContext('2d');
+var tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+var tasksForSelectedDate = tasks.filter(task => task.time.split('T')[0] === selectedDate);
+var completedTasks = tasksForSelectedDate.filter(task => task.completed).length;
+var totalTasks = tasksForSelectedDate.length;
+var remainingTasks = totalTasks - completedTasks;
+if (window.pieChart) {
+window.pieChart.destroy();
+}
+window.pieChart = new Chart(ctx, {
+type: 'pie',
+data: {
+labels: ['Completed Tasks', 'Remaining Tasks'],
+datasets: [{
+label: 'Task Status',
+data: [completedTasks, remainingTasks],
+backgroundColor: ['#36a2eb', '#ff6384']
+}]
+},
+options: {
+responsive: true
+}
+});
+// Calculate completion percentage for selected date
+var percentage = Math.round((completedTasks / totalTasks) * 100);
+// Display completion percentage for selected date below the pie chart
+document.getElementById('completion-percentage').textContent = ' Todays Completion: ' +
+percentage + '%';
+// Calculate and display overall completion percentage
+var overallPercentage = calculateOverallCompletion();
+document.getElementById('overall-completion').textContent = 'Overall Completion: ' +
+overallPercentage + '%';
+}
+// Call generatePieChart when DOM is loaded or when tasks are modified
+document.addEventListener('DOMContentLoaded', function () {
+generatePieChart();
+});
+function displayTasks() {
+var taskList = document.getElementById('task-list');
+taskList.innerHTML = '';
+var tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+// Sort tasks by time in ascending order
+tasks.sort((a, b) => {
+    return new Date(a.time) - new Date(b.time);
+});
+// Group tasks by date
+var groupedTasks = tasks.reduce((acc, task) => {
+var taskDate = task.time.split('T')[0]; // Extract the date part of the datetime
+if (!acc[taskDate]) {
+acc[taskDate] = [];
+}
+acc[taskDate].push(task);
+return acc;
+}, {});
+// Sort the dates
+var sortedDates = Object.keys(groupedTasks).sort();
+sortedDates.forEach(date => {
+var dateHeader = document.createElement('h4');
+dateHeader.textContent = date;
+taskList.appendChild(dateHeader);
+groupedTasks[date].forEach(task => {
+var taskItem = document.createElement('div');
+taskItem.innerHTML = `${task.task} - ${task.time.split('T')[1]}`;
+taskItem.classList.add('task-item');
+if (task.completed) {
+taskItem.classList.add('completed-task');
+} else {
+taskItem.addEventListener('click', function () {
+toggleTaskCompletion(task.id); // Pass the task id
+});
+}
+if (task.priority === 'high') {
+taskItem.classList.add('priority-high');
+} else if (task.priority === 'medium') {
+taskItem.classList.add('priority-medium');
+} else if (task.priority === 'low') {
+taskItem.classList.add('priority-low');
+}
+taskList.appendChild(taskItem);
+});
+});
+var clearButton = document.createElement('button');
+clearButton.textContent = 'Clear Completed Tasks';
+clearButton.addEventListener('click', clearCompletedTasks);
+taskList.appendChild(clearButton);
+}
+function toggleTaskCompletion(taskId) {
+    console.log('Toggling task with ID: ${taskId}'); // Debug log
+    var tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+    var taskIndex = tasks.findIndex(task => task.id === taskId); // Find the correct task index
+    
+    if (taskIndex > -1) {
+        // Ask for confirmation before toggling the task completion
+        var task = tasks[taskIndex];
+        var message = task.completed 
+                      ? 'Are you sure you want to mark this task as incomplete?' 
+                      : 'Are you sure you want to mark this task as completed?';
+        
+        var confirmAction = confirm(message);
+        
+        if (confirmAction) {
+            // Toggle the task completion state if the user confirms
+            task.completed = !task.completed;
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+            displayTasks();
+            generatePieChart(); // Update pie chart for today's tasks
+
+            if (task.completed) {
+                alert('Task completed, Well Done!!');
+            }
+        }
+    } else {
+        console.error('Task not found'); // Debug log
+    }
+}
+// function toggleTaskCompletion(taskId) {
+//     console.log(`Toggling task with ID: ${taskId}`); // Debug log
+// var tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+// var taskIndex = tasks.findIndex(task => task.id === taskId); // Find the correct task index
+// if (taskIndex > -1) {
+// tasks[taskIndex].completed = !tasks[taskIndex].completed;
+// localStorage.setItem('tasks', JSON.stringify(tasks));
+// displayTasks();
+// generatePieChart(); // Update pie chart for today's tasks
+// if (tasks[taskIndex].completed) {
+// alert('Task completed, Well Done!!');
+// }
+// } else {
+// console.error('Task not found'); // Debug log
+// }
+// }
+function addTask() {
+var taskInput = document.getElementById('task-input');
+var taskTime = document.getElementById('task-time').value;
+var taskPriority = document.getElementById('task-priority').value;
+if (taskInput.value === '') {
+alert('Please enter a task.');
+return;
+}
+var tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+var newTask = {
+id: Date.now(), // Generate a unique id based on current timestamp
+task: taskInput.value,
+time: taskTime,
+completed: false,
+priority: taskPriority,
+date: new Date().toISOString().split('T')[0]
+};
+tasks.push(newTask);
+localStorage.setItem('tasks', JSON.stringify(tasks));
+taskInput.value = '';
+displayTasks();
+generatePieChart(); // Update pie chart for today's tasks
+}
+function clearCompletedTasks() {
+var tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+var remainingTasks = tasks.filter(task => !task.completed);
+localStorage.setItem('tasks', JSON.stringify(remainingTasks));
+displayTasks();
+generatePieChart(); // Update pie chart for today's tasks
+}
+function checkNotifications() {
+var tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+var today = new Date().toISOString().split('T')[0];
+var todayTasks = tasks.filter(task => task.date === today && !task.completed);
+if (todayTasks.length > 0) {
+var notification = document.getElementById('notification');
+notification.style.display = 'block';
+}
+}
+function checkReminders() {
+var tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+var now = new Date();
+tasks.forEach(function (task, index) {
+var taskTime = new Date(task.time);
+if (!task.completed && taskTime <= now) {
+var reschedule = confirm('Task time has passed. Do you want to reschedule it?');
+if (reschedule) {
+var newTime = prompt('Enter a new time for the task (YYYY-MM-DDTHH:MM)');
+if (newTime) {
+task.time = newTime;
+localStorage.setItem('tasks', JSON.stringify(tasks));
+displayTasks();
+generatePieChart(); // Update pie chart for today's tasks
+alert('Task has been rescheduled.');
+} else {
+alert('Invalid time. Task remains incomplete.');
+}
+} else {
+alert('Task remains incomplete.');
+}
+}
+});
+}
+var username = localStorage.getItem('username');
+var profileName = document.getElementById('profile-name');
+if (username) {
+profileName.textContent = username;
+} else {
+// Redirect to login if username not found
+alert('Please log in first.');
+window.location.href = 'login.html';
+}
+</script>
+</body>
+</html>
